@@ -8,7 +8,7 @@ module Domotics
       def initialize(args_hash = {})
         super
         @board.set_input_pullup @pin
-        @board.set_watch @pin, ArduinoSerial::WATCHON
+        @board.set_watch @pin, ArduinoBase::WATCHON
       end
     end
   end

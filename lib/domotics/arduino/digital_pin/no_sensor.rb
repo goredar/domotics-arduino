@@ -5,7 +5,7 @@ module Domotics
       include DigitalPin
       def initialize(args_hash = {})
         super
-        @board.set_watch @pin, ArduinoSerial::WATCHON
+        @board.set_watch @pin, ArduinoBase::WATCHON
       end
     end
   end

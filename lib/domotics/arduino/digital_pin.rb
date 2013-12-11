@@ -21,12 +21,12 @@ module Domotics
 
       # Convert to High Level State
       def to_hls(value)
-        value == ArduinoSerial::HIGH ? :on : :off
+        value == ArduinoBase::HIGH ? :on : :off
       end
 
       # Convert to Low Level State
       def to_lls(value)
-        value == :on ? ArduinoSerial::HIGH : ArduinoSerial::LOW
+        value == :on ? ArduinoBase::HIGH : ArduinoBase::LOW
       end
     end
   end
