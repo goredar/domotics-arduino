@@ -1,5 +1,5 @@
 module Domotics
   module Arduino
-    VERSION = "0.0.06"
+    VERSION = "0.0.07"
   end
 end
