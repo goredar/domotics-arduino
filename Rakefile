@@ -13,11 +13,16 @@ MINOR = 1
 MAJOR = 0
 
 desc "Commit patch and release gem"
-task :patch do
+task :patch, :commit_message do |t, args|
+  update(args[:commit_message]){ |sv,i| i == PATCH ? sv.succ : sv }
+end
+
+desc "Commit minor update and release gem"
+task :minor do
   update { |sv,i| i == PATCH ? sv.succ : sv }
 end
 
-def update
+def update(msg)
   # Update version
   File.open "lib/domotics/arduino/version.rb", "r+" do |f|
     up = f.read.sub(/\d+.\d+.\d+/){ |ver| ver.split('.').map.with_index{ |sv, i| yield sv,i }.join('.') }
@@ -27,7 +32,9 @@ def update
   # add new files to repo
   %x(git add --all .)
   # commit
-  %x(git commit -a --reuse-message=HEAD) =~ /nothing to commit/
+  if msg then %x(git commit -a -m "#{msg}")
+  else %x(git commit -a --reuse-message=HEAD)
+  end
   # release
   Rake::Task[:release].reenable
   Rake::Task[:release].invoke
