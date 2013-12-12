@@ -10,12 +10,12 @@ class ArduinoTest < Test::Unit::TestCase
   def asetup
     @brd = ArduinoTestBoard.new(port: BoardEmulator.new.port)
   end
-  def test_dead_board
+  def atest_dead_board
     assert_raise Domotics::Arduino::ArduinoError do
       ArduinoTestBoard.new(port: BoardEmulator.new(type: :dead).port)
     end
   end
-  def test_crasy_board
+  def atest_crasy_board
     assert_raise Domotics::Arduino::ArduinoError do
       ArduinoTestBoard.new(port: BoardEmulator.new(type: :crasy).port)
     end
