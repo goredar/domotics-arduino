@@ -9,8 +9,8 @@ Gem::Specification.new do |spec|
   spec.authors       = ["Goredar"]
   spec.email         = ["goredar@gmail.com"]
   spec.description   = %q{Arduino part of Domotics}
-  spec.summary       = %q{Arduino part of Domotics}
-  spec.homepage      = ""
+  spec.summary       = %q{Hardware drivers for arduino}
+  spec.homepage      = "https://dom.goredar.it"
   spec.license       = "MIT"
 
   spec.files         = `git ls-files`.split($/)
