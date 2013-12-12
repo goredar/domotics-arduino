@@ -50,7 +50,6 @@ def update(msg)
   # commit
   if msg then %x(git commit -a -m "#{msg}")
   else %x(git commit -a --reuse-message=HEAD); end
-  # release
-  #Rake::Task[:release].reenable
-  #Rake::Task[:release].invoke
+  %x(git push)
+  puts "Pushed to github."
 end
