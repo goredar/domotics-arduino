@@ -44,6 +44,7 @@ def update(msg)
   puts "Changed version."
   puts "Removed #{File.delete(*Dir['./*.gem'])} old gems"
   Dir["./*.gemspec"].each { |spec| puts %x(gem build #{spec}) }
+  Dir["./*.gem"].each { |gem| puts %x(gem push #{gem}) }
   # add new files to repo
   %x(git add --all .)
   # commit
