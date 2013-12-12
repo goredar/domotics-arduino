@@ -44,9 +44,9 @@ end
 def update(msg)
   # Update version
   File.open "lib/domotics/arduino/version.rb", "r+" do |f|
-    up = f.read.sub(/\d+.\d+.\d+/){ |ver| ver.split('.').map.with_index{ |sv, i| yield sv,i }.join('.') }
+    p up = f.read.sub(/\d+.\d+.\d+/){ |ver| ver.split('.').map.with_index{ |sv, i| yield sv,i }.join('.') }
     f.seek 0
-    f.write up
+    #f.write up
   end
   # add new files to repo
   %x(git add --all .)
