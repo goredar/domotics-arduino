@@ -271,7 +271,7 @@ module Domotics
         listen
         @logger.info { "done." }
         @logger.info { "Checking connection with board [#{@port_str}]..." }
-        a, b = 2.times.map { rand (0..9) }
+        a, b = 2.times.map { rand 10 }
         if send_command(ECHOREPLY, a, b) == [b, a]
           @logger.info { "done." }
         else
