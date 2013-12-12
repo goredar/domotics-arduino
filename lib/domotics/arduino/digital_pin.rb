@@ -2,6 +2,7 @@ module Domotics::Arduino
   module DigitalPin
 
     def initialize(args = {})
+      @device = args[:device]
       @pin = args[:pin]
       @device.register_pin self, @pin
       super

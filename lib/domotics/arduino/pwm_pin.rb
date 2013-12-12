@@ -3,6 +3,7 @@ module Domotics
     module PWMPin
 
       def initialize(args = {})
+        @device = args[:device]
         @pin = args[:pin]
         @device.set_pwm_frequency @pin, 1
         super
