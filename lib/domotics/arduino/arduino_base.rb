@@ -185,7 +185,7 @@ module Domotics
 
       # Default event handler simple prints event.
       def event_handler(hash)
-        #raise ArduinoError, hash[:event].inspect
+        raise hash[:e] if hash[:e].is_a? ArduinoError
       end
 
       # Send command directly to board
@@ -250,7 +250,7 @@ module Domotics
       end
       # Connect to board
       def connect
-        @board.close if @board
+        @board.close if @board and !@board.closed?
         # Release command lock
         @reply.push(FAILREPRLY) if @command_lock.locked?
         @logger.info { "Open serial connection to board [#{@port_str}]..." }
@@ -283,6 +283,7 @@ module Domotics
         @logger.info { "done." } if send_command(DEFAULTS)
       rescue Exception => e
         @logger.error { e.message }
+        #@logger.debug { e.backtrace.join }
         tries = tries || 0
         tries += 1
         if tries <= 3
@@ -291,8 +292,7 @@ module Domotics
           retry
         end
         @logger.error { "Board [#{@port_str}] malfunction. Automatic restart failed." }
-        event_handler :event => :malfunction
-        raise ArduinoError, "Board [#{@port_str}] malfunction. Automatic restart failed."
+        event_handler event: :malfunction, e: ArduinoError.new("Board [#{@port_str}] malfunction. Automatic restart failed.")
       end
       # Checks
       def check_pin(pin)
