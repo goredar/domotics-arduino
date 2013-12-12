@@ -21,7 +21,7 @@ module Domotics
       SUCCESSREPRLY = 2
       FAILREPRLY = 3
       # Board events
-      EVENTS = {'0' => :pin_state_change}
+      EVENTS = {'0' => :pin_state_changed}
       # Commands for board
       SETPINMODE = 0
       GETDIGITAL = 1
@@ -65,6 +65,8 @@ module Domotics
           @pwm_pins = Array.new(12) { |index| 2+index } + [44,45,46]
         end
         @logger = args[:logger] || Logger.new(STDERR)
+        @timeout = args[:timeout] || 1
+        @retry_wait = args[:retry_wait] || 5
         # Not allow multiple command sends
         @command_lock = Mutex.new
         @reply = Queue.new
@@ -184,13 +186,13 @@ module Domotics
       private
 
       # Default event handler simple prints event.
-      def event_handler(hash)
-        raise hash[:e] if hash[:e].is_a? ArduinoError
+      def event_handler(event)
+        raise event[:e] if event[:e].is_a? ArduinoError
       end
 
       # Send command directly to board
       def send_command(command, pin = 0, value = 0)
-        Timeout.timeout(1) do
+        Timeout.timeout(@timeout) do
           @command_lock.synchronize do
             @board.puts("#{command} #{pin} #{value}")
             # Get reply
@@ -285,8 +287,8 @@ module Domotics
         tries = tries || 0
         tries += 1
         if tries <= 3
-          @logger.info { "Attempt #{tries}: try to reconnect in #{2**tries} seconds." }
-          sleep 2**tries
+          @logger.info { "Attempt #{tries}: try to reconnect in #{@retry_wait**tries} seconds." }
+          sleep @retry_wait**tries
           retry
         end
         @logger.error { "Board [#{@port_str}] malfunction. Automatic restart failed." }
