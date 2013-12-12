@@ -6,11 +6,11 @@ require 'domotics/arduino/version'
 Gem::Specification.new do |spec|
   spec.name          = "domotics-arduino"
   spec.version       = Domotics::Arduino::VERSION
-  spec.authors       = ["Goredar"]
+  spec.authors       = ["goredar"]
   spec.email         = ["goredar@gmail.com"]
   spec.description   = %q{Arduino part of Domotics}
   spec.summary       = %q{Hardware drivers for arduino}
-  spec.homepage      = "https://dom.goredar.it"
+  spec.homepage      = "https://goredar.it"
   spec.license       = "MIT"
 
   spec.files         = `git ls-files`.split($/)

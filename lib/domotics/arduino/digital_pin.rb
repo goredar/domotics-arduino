@@ -2,18 +2,17 @@ module Domotics::Arduino
   module DigitalPin
 
     def initialize(args = {})
-      @board = Domotics::Device[args[:device]]
       @pin = args[:pin]
-      @board.register_pin self, @pin
+      @device.register_pin self, @pin
       super
     end
 
     def state!
-      to_hls @board.get_digital(@pin)
+      to_hls @device.get_digital(@pin)
     end
 
     def set_state(value)
-      @board.set_digital @pin, to_lls(value)
+      @device.set_digital @pin, to_lls(value)
       super
     end
 
