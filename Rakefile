@@ -36,7 +36,7 @@ end
 def update(msg)
   # Update version
   File.open "lib/domotics/arduino/version.rb", "r+" do |f|
-    up = f.read.sub(/\d+.\d+.\d+/){ |ver| ver.split('.').map.with_index{ |sv, i| yield sv,i }.join('.') }
+    up = f.read.sub(/\d+.\d+.\d+/) { |ver| ver.split('.').map.with_index{ |sv, i| yield sv,i }.join('.') }
     f.seek 0
     f.write up
   end
@@ -44,8 +44,7 @@ def update(msg)
   %x(git add --all .)
   # commit
   if msg then %x(git commit -a -m "#{msg}")
-  else %x(git commit -a --reuse-message=HEAD)
-  end
+  else %x(git commit -a --reuse-message=HEAD); end
   # release
   Rake::Task[:release].reenable
   Rake::Task[:release].invoke
