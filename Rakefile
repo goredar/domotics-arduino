@@ -18,9 +18,28 @@ task :patch, :commit_message do |t, args|
 end
 
 desc "Commit minor update and release gem"
-task :minor do
-  update { |sv,i| i == PATCH ? sv.succ : sv }
+task :minor, :commit_message do |t, args|
+  update(args[:commit_message]) do |sv,i| 
+    case i
+    when MINOR then sv.succ
+    when PATCH then "00"
+    else sv
+    end
+  end
 end
+
+desc "Commit major update and release gem"
+task :major, :commit_message do |t, args|
+  update(args[:commit_message]) do |sv,i| 
+    case i
+    when MAJOR then sv.succ
+    when MINOR then "0"
+    when PATCH then "00"
+    else sv
+    end
+  end
+end
+
 
 def update(msg)
   # Update version
