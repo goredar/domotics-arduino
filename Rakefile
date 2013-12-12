@@ -22,7 +22,7 @@ task :minor, :commit_message do |t, args|
   update(args[:commit_message]) do |sv,i| 
     case i
     when MINOR then sv.succ
-    when PATCH then "00"
+    when PATCH then "0"
     else sv
     end
   end
@@ -30,23 +30,16 @@ end
 
 desc "Commit major update and release gem"
 task :major, :commit_message do |t, args|
-  update(args[:commit_message]) do |sv,i| 
-    case i
-    when MAJOR then sv.succ
-    when MINOR then "0"
-    when PATCH then "00"
-    else sv
-    end
-  end
+  update(args[:commit_message]){ |sv,i| i == MAJOR ? sv.succ : "0" }
 end
 
 
 def update(msg)
   # Update version
   File.open "lib/domotics/arduino/version.rb", "r+" do |f|
-    p up = f.read.sub(/\d+.\d+.\d+/){ |ver| ver.split('.').map.with_index{ |sv, i| yield sv,i }.join('.') }
+    up = f.read.sub(/\d+.\d+.\d+/){ |ver| ver.split('.').map.with_index{ |sv, i| yield sv,i }.join('.') }
     f.seek 0
-    #f.write up
+    f.write up
   end
   # add new files to repo
   %x(git add --all .)
