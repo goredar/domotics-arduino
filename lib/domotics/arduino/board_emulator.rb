@@ -39,6 +39,9 @@ module Domotics::Arduino
     def port
       @slave.path
     end
+    def set_internal_state(pin, state)
+      @state_list[pin] = state
+    end
     def toggle_pin(pin)
       @state_list[pin] = @state_list[pin] == ArduinoBase::LOW ? ArduinoBase::HIGH : ArduinoBase::LOW
       @master.puts "0 #{pin} #{@state_list[pin]}"
