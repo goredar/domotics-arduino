@@ -233,7 +233,6 @@ module Domotics
                 terminate
               end
               message = message.chomp.force_encoding("ISO-8859-1").split
-              p message.length
               case message.length
               when 1
                 @reply.push(message[0].to_i)
