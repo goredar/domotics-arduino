@@ -176,8 +176,8 @@ module Domotics
         @logger.info { "Destroy board connection..." }
         @command_lock.synchronize do
           @board_listener.exit if @board_listener and @board_listener.alive?
-          @board.close
         end
+        @board.close
         @logger.info { "done." }
       end
 
@@ -190,8 +190,8 @@ module Domotics
 
       # Send command directly to board
       def send_command(command, pin = 0, value = 0)
-        @command_lock.synchronize do
-          Timeout.timeout(1) do
+        Timeout.timeout(1) do
+          @command_lock.synchronize do
             @board.puts("#{command} #{pin} #{value}")
             # Get reply
             case reply = @reply.pop
@@ -212,9 +212,8 @@ module Domotics
             end
           end
         end
-      rescue
-        @logger.error { "Timeout while sending command to board [#{@port_str}]." }
-        nil
+      rescue Timeout::Error
+        raise ArgumentError, "Board [#{@port_str}] timeout."
       end
       # Listen for board replies and alarms
       def listen
@@ -227,10 +226,10 @@ module Domotics
                 if @command_lock.locked?
                   @reply.push ArduinoError.new("Board [#{@port_str}] i/o error.")
                 else
-                  connect
                   @logger.error { "Board [#{@port_str}] i/o error." }
+                  Thread.new { connect }
                 end
-                terminate
+                @board_lock.synchronize { @board_listener.exit }
               end
               message = message.chomp.force_encoding("ISO-8859-1").split
               case message.length
@@ -242,7 +241,6 @@ module Domotics
                 @reply.push(message.collect{ |m| m.to_i })
               else
                 @reply.push ArduinoError.new("Invalid reply from board [#{@port_str}].") if @command_lock.locked?
-                terminate
               end
             end
           end
