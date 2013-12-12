@@ -33,7 +33,6 @@ task :major, :commit_message do |t, args|
   update(args[:commit_message]){ |sv,i| i == MAJOR ? sv.succ : "0" }
 end
 
-
 def update(msg)
   # Update version
   File.open "lib/domotics/arduino/version.rb", "r+" do |f|

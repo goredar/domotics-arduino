@@ -46,7 +46,7 @@ module Domotics
       TIMER_5 = 5
       def initialize(args = {})
         # grab args from hash
-        case @type = args[:type] || :mega
+        case @board_type = args[:board] || :mega
         when :nano
           @port_str = args[:port] || "/dev/ttyUSB0"
           @number_of_pins = 22
@@ -117,7 +117,7 @@ module Domotics
 
       # ---9--- SETPWMFREQ
       def set_pwm_frequency(pin, divisor = 5)
-        case @type
+        case @board_type
         when :nano
           case pin
           when 9,10
@@ -235,8 +235,8 @@ module Domotics
               @reply.push(FAILREPRLY) if @command_lock.locked?
               # Close board connection
               @board.close
-              @logger.info "Try to restart board[#{@port_str}] in 5 seconds..."
-              sleep 5
+              @logger.info "Try to restart board[#{@port_str}] in 2 seconds..."
+              sleep 2
               connect
             end
             # Exit errored thread
@@ -281,8 +281,8 @@ module Domotics
         tries = tries || 0
         tries += 1
         if tries <= 3
-          @logger.info { "Attempt #{tries}: try to reconnect in #{5**tries} seconds." }
-          sleep 5**tries
+          @logger.info { "Attempt #{tries}: try to reconnect in #{2**tries} seconds." }
+          sleep 2**tries
           retry
         end
         @logger.error { "Board[#{@port_str}] malfunction. Automatic restart failed." }
