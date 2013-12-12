@@ -1,6 +1,4 @@
-﻿require 'pty'
-
-module Domotics::Arduino
+﻿module Domotics::Arduino
   class BoardEmulator
     attr_accessor :type, :state_list
     def initialize(args = {})

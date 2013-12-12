@@ -1,8 +1,3 @@
-require 'serialport'
-require 'thread'
-require 'logger'
-require 'timeout'
-
 module Domotics
   module Arduino
 
