@@ -46,7 +46,12 @@ module Domotics
       TIMER_5 = 5
       def initialize(args = {})
         # grab args from hash
-        case @board_type = args[:board] || :mega
+        @board_type = args[:board] || :mega
+        unless [:nano, :mega].include? @board_type
+          raise ArgumentError, 'Invalid board type. Use defaults.'
+          @board_type = :mega
+        end
+        case @board_type
         when :nano
           @port_str = args[:port] || "/dev/ttyUSB0"
           @number_of_pins = 22
@@ -58,18 +63,17 @@ module Domotics
           @number_of_pins = 70
           @adc_pins = Array.new(16) { |index| 54+index }
           @pwm_pins = Array.new(12) { |index| 2+index } + [44,45,46]
-        else
-          raise ArduinoError, 'Invalid board type.'
         end
         @logger = args[:logger] || Logger.new(STDERR)
         # Not allow multiple command sends
         @command_lock = Mutex.new
         @reply = Queue.new
-        # Open connection
+        # connection
+        @board_lock = Mutex.new
         @board = nil
         @board_listener = nil
         connect
-        super if self.class.superclass != Object
+        super unless self.class.superclass == Object
       end
 
       # ---0--- SETPINMODE 
@@ -168,20 +172,20 @@ module Domotics
       end
 
       def destroy
+        super if self.class.superclass != Object
         @logger.info { "Destroy board connection..." }
         @command_lock.synchronize do
           @board_listener.exit if @board_listener and @board_listener.alive?
           @board.close
         end
         @logger.info { "done." }
-        super if self.class.superclass != Object
       end
 
       private
 
       # Default event handler simple prints event.
       def event_handler(hash)
-        raise ArduinoError, hash[:event].inspect
+        #raise ArduinoError, hash[:event].inspect
       end
 
       # Send command directly to board
@@ -201,21 +205,35 @@ module Domotics
               false
             when Array
               reply
+            when ArduinoError
+              raise reply
             else
               nil
             end
           end
         end
+      rescue
+        @logger.error { "Timeout while sending command to board [#{@port_str}]." }
+        nil
       end
       # Listen for board replies and alarms
       def listen
-        @board_listener.exit if @board_listener
-        @board_listener = Thread.new do
-          begin
+        @board_lock.synchronize do
+          @board_listener.exit if @board_listener and @board_listener.alive?
+          @board_listener = Thread.new do
             loop do
               message = @board.gets
-              raise ArduinoError, "Board[#{@port_str}] i/o error." unless message # message nil - board disconected
-              message = message.force_encoding("ISO-8859-1").split
+              unless message # message nil - board disconected
+                if @command_lock.locked?
+                  @reply.push ArduinoError.new("Board [#{@port_str}] i/o error.")
+                else
+                  connect
+                  @logger.error { "Board [#{@port_str}] i/o error." }
+                end
+                terminate
+              end
+              message = message.chomp.force_encoding("ISO-8859-1").split
+              p message.length
               case message.length
               when 1
                 @reply.push(message[0].to_i)
@@ -224,35 +242,25 @@ module Domotics
               when 2
                 @reply.push(message.collect{ |m| m.to_i })
               else
-                raise ArduinoError, "Invalid reply from board[#{@port_str}]."
+                @reply.push ArduinoError.new("Invalid reply from board [#{@port_str}].") if @command_lock.locked?
+                terminate
               end
             end
-          rescue ArduinoError => e
-            # Continue to operate in new thread
-            Thread.new do
-              @logger.error e.message
-              # Release command lock
-              @reply.push(FAILREPRLY) if @command_lock.locked?
-              # Close board connection
-              @board.close
-              @logger.info "Try to restart board[#{@port_str}] in 2 seconds..."
-              sleep 2
-              connect
-            end
-            # Exit errored thread
-            @board_listener.exit
           end
         end
       end
       # Connect to board
       def connect
-        @logger.info { "Open serial connection to board[#{@port_str}]..." }
+        @board.close if @board
+        # Release command lock
+        @reply.push(FAILREPRLY) if @command_lock.locked?
+        @logger.info { "Open serial connection to board [#{@port_str}]..." }
         baudrate = 115200; databits = 8; stopbits = 1; parity = SerialPort::NONE
         @board = SerialPort.new(@port_str, baudrate, databits, stopbits, parity)
         @board.read_timeout = 0
         @board.sync = true
         @logger.info { "done." }
-        @logger.info { "Initializing board[#{@port_str}]..." }
+        @logger.info { "Initializing board [#{@port_str}]..." }
         # Pin states and mods
         @pin_mode = Array.new(@number_of_pins, INPUT)
         @watch_list = Array.new(@number_of_pins, WATCHOFF)
@@ -262,20 +270,18 @@ module Domotics
           sleep(2)
         end
         @logger.info { "done." }
-        @logger.info { "Starting board[#{@port_str}] listener..." }
+        @logger.info { "Starting board [#{@port_str}] listener..." }
         listen
         @logger.info { "done." }
-        @logger.info { "Reset board[#{@port_str}] to defaults..." }
-        @logger.info { "done." } if send_command(DEFAULTS)
-        @logger.info { "Checking connection with board[#{@port_str}]..." }
-        random = Random.new
-        a, b = 2.times.map { random.rand(0..9) }
+        @logger.info { "Checking connection with board [#{@port_str}]..." }
+        a, b = 2.times.map { rand (0..9) }
         if send_command(ECHOREPLY, a, b) == [b, a]
           @logger.info { "done." }
         else
-          @logger.error { "Bad reply from board[#{@port_str}] (wrong firmware?)." }
-          raise ArduinoError
+          raise ArduinoError, "Bad reply from board [#{@port_str}] (wrong firmware?)."
         end
+        @logger.info { "Reset board [#{@port_str}] to defaults..." }
+        @logger.info { "done." } if send_command(DEFAULTS)
       rescue Exception => e
         @logger.error { e.message }
         tries = tries || 0
@@ -285,8 +291,9 @@ module Domotics
           sleep 2**tries
           retry
         end
-        @logger.error { "Board[#{@port_str}] malfunction. Automatic restart failed." }
+        @logger.error { "Board [#{@port_str}] malfunction. Automatic restart failed." }
         event_handler :event => :malfunction
+        raise ArduinoError, "Board [#{@port_str}] malfunction. Automatic restart failed."
       end
       # Checks
       def check_pin(pin)
